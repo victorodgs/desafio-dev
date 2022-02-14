@@ -21,7 +21,7 @@ class TransactionsController < ApplicationController
 
     if fileExtension.eql? '.txt'
       File.readlines(params[:cnab]).each do |line|
-        # verify if line is not empty
+        # Verify if line is not empty
         if line.length >= 10
           cnabLine = line.encode('UTF-8', 'UTF-8')
 
