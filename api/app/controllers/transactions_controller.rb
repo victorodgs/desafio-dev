@@ -15,27 +15,35 @@ class TransactionsController < ApplicationController
 
   # POST /transactions
   def create
-    @transaction = Transaction.new(transaction_params)
+    # rest of params
 
-    if @transaction.save
-      render json: @transaction, status: :created, location: @transaction
+    fileExtension = File.extname(params[:cnab].original_filename)
+
+    if fileExtension.eql? '.txt'
+      File.readlines(params[:cnab]).each do |line|
+        # verify if line is not empty
+        if line.length >= 10
+          cnabLine = line.encode('UTF-8', 'UTF-8')
+
+          @transaction = Transaction.new do |t|
+            t.transaction_type = cnabLine.to_s[0,1]
+            t.value = cnabLine.to_s[9,18]
+          end
+
+          @transaction.save
+        end
+      end
+
+      if @transaction.save
+        render json: {message: 'Transactions saved successfully.'}, status: :created, location: @transaction
+      else
+        render json: @transaction.errors, status: :unprocessable_entity
+      end
+
     else
-      render json: @transaction.errors, status: :unprocessable_entity
+      render json: {message: 'Only txt files are supported.'}, status: :unprocessable_entity
     end
-  end
 
-  # PATCH/PUT /transactions/1
-  def update
-    if @transaction.update(transaction_params)
-      render json: @transaction
-    else
-      render json: @transaction.errors, status: :unprocessable_entity
-    end
-  end
-
-  # DELETE /transactions/1
-  def destroy
-    @transaction.destroy
   end
 
   private
@@ -46,6 +54,6 @@ class TransactionsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def transaction_params
-      params.fetch(:transaction, {})
+      params.fetch(:cnab)
     end
 end
